@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lotería Fiscal — Artículo 251 LSS</title>
+<style>
+:root{
+  --bg:#faf8f5;--card:#fffdfb;--pink:#e8cfcf;--pink2:#d8b6b9;--beige:#d8c3b5;
+  --taupe:#b8a89a;--gold:#b89b62;--ink:#292525;--muted:#766e6b;--ok:#a9c2ae;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(135deg,#faf8f5,#f4ece7);color:var(--ink);font-family:Georgia,"Times New Roman",serif}
+button,input,select{font:inherit}
+.app{max-width:1100px;margin:auto;padding:18px}
+header{text-align:center;padding:18px 10px 10px}
+.logo{font-size:12px;letter-spacing:3px;color:var(--gold);font-weight:bold}
+h1{margin:7px 0 2px;font-size:clamp(27px,6vw,48px)}
+.subtitle{color:var(--muted);font-family:Arial,sans-serif;font-size:14px}
+.tabs{display:flex;gap:8px;justify-content:center;margin:16px auto;flex-wrap:wrap}
+.tab,.btn{border:0;border-radius:14px;padding:11px 16px;background:#eee5df;color:var(--ink);cursor:pointer;font-weight:bold}
+.tab.active,.btn.primary{background:var(--pink2)}
+.btn.gold{background:#eadfca}.btn.danger{background:#ecd0d0}.btn:disabled{opacity:.45;cursor:not-allowed}
+.panel{background:rgba(255,253,251,.92);border:1px solid #e4d9d2;border-radius:24px;padding:20px;box-shadow:0 10px 35px rgba(80,55,45,.08);margin-bottom:18px}
+.hidden{display:none!important}
+.center{text-align:center}
+.room{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
+input{border:1px solid #d8cdc6;border-radius:12px;padding:11px 12px;background:white;max-width:180px}
+.small{font:13px Arial,sans-serif;color:var(--muted)}
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#f0e6df;font:12px Arial,sans-serif}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:620px;margin:16px auto}
+.cell{min-height:120px;border:1px solid #dfd2ca;border-radius:18px;background:#fff;padding:12px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;transition:.15s;box-shadow:0 4px 10px rgba(70,50,40,.05)}
+.cell:hover{transform:translateY(-1px)}
+.cell.marked{background:var(--ok);border-color:#7f9c85;transform:scale(.98)}
+.frac{font-size:14px;color:var(--gold);font-weight:bold}
+.cell b{font-size:16px;margin-top:5px}
+.callcard{text-align:center;max-width:720px;margin:auto}
+.callnum{font-size:13px;letter-spacing:2px;color:var(--gold);font-family:Arial,sans-serif}
+.callfrac{font-size:clamp(44px,10vw,80px);font-weight:bold;margin:4px}
+.calltitle{font-size:clamp(22px,5vw,35px);margin-bottom:14px}
+.clue{font-size:18px;line-height:1.45;background:#f7efea;border-radius:18px;padding:18px}
+.answer{margin:15px 0;font-weight:bold;font-size:20px}
+.controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:15px}
+.grid12{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.mini{border:1px solid #e3d7d0;border-radius:15px;padding:12px;background:#fff}
+.mini b{display:block;margin-bottom:5px}
+.winner{background:#f3e4e1;border:2px solid var(--pink2);border-radius:22px;padding:18px;text-align:center;margin-top:18px}
+ol{padding-left:20px;line-height:1.6}
+footer{text-align:center;color:var(--muted);font:12px Arial,sans-serif;padding:12px}
+@media(max-width:600px){.app{padding:10px}.panel{padding:14px;border-radius:19px}.cell{min-height:100px;padding:8px}.cell b{font-size:14px}.clue{font-size:16px}.board{gap:7px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="logo">ESTUDIO FISCAL DE LA SEGURIDAD SOCIAL</div>
+  <h1>🎲 Lotería Fiscal</h1>
+  <div class="subtitle">Artículo 251 · Ley del Seguro Social</div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" id="tPlayer">📱 Jugador</button>
+  <button class="tab" id="tHost">🎤 Cantador</button>
+  <button class="tab" id="tHow">❔ Cómo jugar</button>
+</div>
+
+<section id="player" class="panel">
+  <div class="center">
+    <h2>Tu tablero digital</h2>
+    <p class="small">Elige un tablero del 1 al 50. Puedes cambiarlo antes de empezar.</p>
+    <div class="room">
+      <label>Tablero # <input id="boardNo" type="number" min="1" max="50" value="1"></label>
+      <input id="playerName" maxlength="25" placeholder="Tu nombre">
+      <button class="btn primary" id="loadBoard">Cargar tablero</button>
+    </div>
+    <div id="playerStatus" class="small" style="margin-top:10px"></div>
+  </div>
+  <div id="boardWrap" class="hidden">
+    <div class="center"><span class="badge" id="boardBadge"></span></div>
+    <div class="board" id="board"></div>
+    <div class="controls">
+      <button class="btn" id="clearMarks">↺ Desmarcar todo</button>
+      <button class="btn primary" id="lotteryBtn">🎉 ¡LOTERÍA!</button>
+    </div>
+    <div id="winnerBox" class="winner hidden"></div>
+  </div>
+</section>
+
+<section id="host" class="panel hidden">
+  <div class="center">
+    <h2>🎤 Pantalla del cantador</h2>
+    <p class="small">Crea una sala para que los jugadores reciban automáticamente cada pista en sus celulares.</p>
+    <div class="room">
+      <button class="btn primary" id="createRoom">Crear sala</button>
+      <input id="roomCode" readonly placeholder="Código de sala">
+      <button class="btn" id="copyRoom">Copiar código</button>
+    </div>
+    <div id="hostStatus" class="small" style="margin-top:10px"></div>
+  </div>
+  <div id="hostCall" class="callcard hidden">
+    <div class="callnum" id="callNum"></div>
+    <div class="callfrac" id="callFrac">—</div>
+    <div class="calltitle" id="callTitle">Listos</div>
+    <div class="clue" id="callClue">Presiona “Siguiente pista” para comenzar.</div>
+    <div class="answer hidden" id="callAnswer"></div>
+    <div class="controls">
+      <button class="btn primary" id="nextCall">▶ Siguiente pista</button>
+      <button class="btn gold" id="showAnswer">👁 Mostrar respuesta</button>
+      <button class="btn danger" id="resetGame">↺ Reiniciar</button>
+    </div>
+    <div style="margin-top:18px" class="small">Pista <span id="progress">0/12</span></div>
+  </div>
+</section>
+
+<section id="how" class="panel hidden">
+  <h2>Cómo jugar desde el celular</h2>
+  <ol>
+    <li>Una integrante abre <b>🎤 Cantador</b>, crea una sala y comparte el código.</li>
+    <li>Cada compañero abre esta misma página en su celular, entra a <b>📱 Jugador</b> y elige uno de los <b>50 tableros</b>.</li>
+    <li>El cantador pulsa <b>“Siguiente pista”</b>. La pista aparece también en los celulares conectados.</li>
+    <li>Cada jugador toca la casilla que corresponde a la pista. La casilla queda marcada.</li>
+    <li>Cuando alguien complete sus 9 casillas, pulsa <b>“¡LOTERÍA!”</b>.</li>
+    <li>Para validar al ganador, debe explicar una de las fracciones que marcó. Así la actividad funciona como retroalimentación y no solo como juego.</li>
+  </ol>
+  <p class="small"><b>Importante:</b> la sala usa conexión entre dispositivos mediante PeerJS. Para que funcione entre celulares, la página debe abrirse con internet y preferentemente mediante HTTPS (por ejemplo, GitHub Pages, Netlify o similar).</p>
+  <h3>Las 12 fracciones</h3>
+  <div class="grid12" id="allCards"></div>
+</section>
+
+<footer>Diseñada para la exposición del Artículo 251 LSS · 50 tableros únicos</footer>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const DATA = {"cards": [{"id": 1, "fraccion": "I", "titulo": "Administrar los seguros", "pista": "Esta facultad se relaciona con la administración de los distintos seguros que contempla la Ley del Seguro Social.", "respuesta": "Fracción I — Administrar los seguros"}, {"id": 2, "fraccion": "II", "titulo": "Satisfacer prestaciones", "pista": "Esta facultad establece que el Instituto debe otorgar las prestaciones correspondientes establecidas en la Ley.", "respuesta": "Fracción II — Satisfacer prestaciones"}, {"id": 3, "fraccion": "III", "titulo": "Invertir fondos", "pista": "El IMSS puede realizar esta actividad con sus fondos conforme a las disposiciones de la Ley.", "respuesta": "Fracción III — Invertir fondos"}, {"id": 4, "fraccion": "IV", "titulo": "Realizar actos jurídicos", "pista": "El Instituto puede realizar los actos necesarios para cumplir sus fines y administrar sus finanzas institucionales.", "respuesta": "Fracción IV — Realizar actos jurídicos"}, {"id": 5, "fraccion": "V", "titulo": "Adquirir bienes", "pista": "Esta facultad permite al IMSS adquirir equipo médico, computadoras, mobiliario, vehículos, hospitales, clínicas y oficinas para cumplir sus fines.", "respuesta": "Fracción V — Adquirir bienes"}, {"id": 6, "fraccion": "VI", "titulo": "Establecer unidades y servicios", "pista": "Puede establecer unidades médicas, guarderías, farmacias, velatorios, centros de capacitación, deportivos, culturales y otros establecimientos.", "respuesta": "Fracción VI — Establecer unidades y servicios"}, {"id": 7, "fraccion": "VII", "titulo": "Organizar unidades", "pista": "Esta facultad se refiere a la organización de las unidades administrativas del Instituto conforme a su estructura orgánica autorizada.", "respuesta": "Fracción VII — Organizar unidades"}, {"id": 8, "fraccion": "VIII", "titulo": "Expedir lineamientos", "pista": "El Instituto puede emitir disposiciones de observancia general para la aplicación administrativa de la Ley.", "respuesta": "Fracción VIII — Expedir lineamientos"}, {"id": 9, "fraccion": "IX", "titulo": "Difundir previsión y seguridad social", "pista": "Esta facultad consiste en difundir conocimientos y prácticas relacionadas con la previsión y la seguridad social.", "respuesta": "Fracción IX — Difundir previsión y seguridad social"}, {"id": 10, "fraccion": "X", "titulo": "Registrar e inscribir", "pista": "Puede registrar a patrones y sujetos obligados, e inscribir a trabajadores, además de precisar su base de cotización.", "respuesta": "Fracción X — Registrar e inscribir"}, {"id": 11, "fraccion": "XI", "titulo": "Dar de baja", "pista": "Si desaparece o no existe el supuesto que originó el aseguramiento, el Instituto puede dar de baja a patrones, sujetos obligados o asegurados.", "respuesta": "Fracción XI — Dar de baja"}, {"id": 12, "fraccion": "XII", "titulo": "Recaudar y cobrar", "pista": "Esta facultad permite al IMSS recaudar y cobrar cuotas, capitales constitutivos, accesorios legales y otros recursos.", "respuesta": "Fracción XII — Recaudar y cobrar"}], "boards": [[1, 12, 3, 8, 2, 5, 10, 6, 7], [11, 10, 6, 9, 3, 8, 7, 5, 4], [7, 4, 5, 6, 2, 10, 9, 8, 3], [10, 11, 4, 1, 8, 12, 3, 6, 9], [6, 2, 5, 7, 11, 8, 1, 12, 10], [12, 7, 6, 8, 5, 2, 1, 3, 9], [3, 8, 10, 9, 7, 1, 4, 12, 6], [8, 6, 10, 2, 11, 7, 1, 4, 5], [1, 2, 6, 12, 5, 11, 10, 7, 4], [8, 11, 3, 10, 2, 6, 5, 12, 4], [6, 12, 9, 10, 4, 5, 8, 11, 2], [4, 1, 10, 12, 6, 9, 3, 2, 7], [11, 5, 6, 3, 9, 12, 10, 2, 8], [9, 7, 4, 12, 11, 8, 10, 2, 5], [7, 12, 8, 9, 1, 6, 2, 11, 10], [12, 6, 11, 1, 3, 9, 7, 5, 8], [3, 6, 9, 10, 5, 12, 1, 2, 7], [3, 8, 2, 11, 1, 7, 10, 4, 12], [11, 6, 4, 9, 8, 3, 1, 10, 2], [11, 6, 12, 8, 9, 3, 7, 2, 1], [8, 3, 1, 11, 6, 12, 2, 7, 5], [8, 12, 5, 6, 3, 1, 2, 4, 9], [3, 6, 4, 7, 11, 1, 10, 8, 9], [2, 6, 1, 5, 3, 9, 7, 12, 4], [6, 9, 8, 1, 7, 4, 3, 2, 5], [8, 9, 3, 11, 12, 6, 2, 4, 10], [4, 3, 12, 10, 5, 2, 6, 9, 8], [8, 7, 12, 1, 2, 9, 5, 6, 11], [1, 6, 7, 10, 9, 11, 4, 12, 8], [2, 3, 5, 12, 6, 7, 8, 10, 4], [4, 3, 10, 8, 12, 9, 7, 5, 11], [7, 4, 1, 9, 3, 8, 2, 12, 11], [7, 12, 6, 10, 1, 5, 4, 2, 3], [12, 11, 4, 3, 2, 9, 10, 5, 8], [12, 3, 2, 7, 5, 4, 8, 11, 6], [6, 4, 2, 5, 1, 12, 9, 7, 10], [1, 7, 8, 4, 5, 2, 12, 3, 10], [10, 5, 6, 1, 12, 8, 7, 2, 9], [10, 11, 1, 3, 6, 9, 12, 5, 7], [4, 3, 1, 5, 6, 2, 11, 12, 7], [8, 9, 7, 11, 12, 10, 6, 5, 3], [3, 2, 10, 7, 4, 6, 12, 1, 8], [4, 2, 7, 9, 6, 12, 11, 3, 10], [4, 12, 11, 7, 3, 1, 5, 8, 9], [7, 2, 11, 10, 1, 4, 8, 9, 5], [12, 8, 9, 5, 1, 10, 3, 7, 11], [11, 10, 9, 6, 1, 8, 7, 5, 12], [9, 2, 3, 7, 11, 5, 6, 10, 8], [1, 2, 12, 10, 5, 11, 3, 4, 6], [3, 1, 6, 10, 11, 8, 9, 4, 5]]};
+let currentBoard = 1, marks = new Set(), peer = null, conn = null, hostConns = [], callIndex = -1;
+const $ = id => document.getElementById(id);
+
+function switchTab(which){
+  ["player","host","how"].forEach(x => $(x).classList.toggle("hidden", x!==which));
+  ["tPlayer","tHost","tHow"].forEach(x => $(x).classList.remove("active"));
+  $("t"+which.charAt(0).toUpperCase()+which.slice(1)).classList.add("active");
+}
+$("tPlayer").onclick=()=>switchTab("player");
+$("tHost").onclick=()=>switchTab("host");
+$("tHow").onclick=()=>switchTab("how");
+
+function renderBoard(){
+  const cells = DATA.boards[currentBoard-1];
+  $("boardWrap").classList.remove("hidden");
+  $("boardBadge").textContent = "TABLERO #"+String(currentBoard).padStart(2,"0");
+  $("board").innerHTML="";
+  cells.forEach(id=>{
+    const c=DATA.cards[id-1], el=document.createElement("button");
+    el.className="cell"+(marks.has(id)?" marked":"");
+    el.dataset.id=id;
+    el.innerHTML=`<span class="frac">FRACCIÓN ${c.fraccion}</span><b>${c.titulo}</b>`;
+    el.onclick=()=>{ marks.has(id)?marks.delete(id):marks.add(id); renderBoard(); };
+    $("board").appendChild(el);
+  });
+  $("winnerBox").classList.add("hidden");
+}
+$("loadBoard").onclick=()=>{
+  currentBoard=Math.min(50,Math.max(1,Number($("boardNo").value)||1));
+  $("boardNo").value=currentBoard; marks=new Set();
+  localStorage.setItem("loteriaBoard",currentBoard);
+  localStorage.setItem("loteriaName",$("playerName").value);
+  renderBoard();
+  $("playerStatus").textContent="Listo. Espera las pistas del cantador.";
+};
+(function initPlayer(){
+  const b=Number(localStorage.getItem("loteriaBoard")||1);
+  const n=localStorage.getItem("loteriaName")||"";
+  $("boardNo").value=b; $("playerName").value=n; currentBoard=b; renderBoard();
+})();
+$("clearMarks").onclick=()=>{marks=new Set();renderBoard()};
+$("lotteryBtn").onclick=()=>{
+  const complete=marks.size===9;
+  $("winnerBox").classList.remove("hidden");
+  $("winnerBox").innerHTML=complete
+    ? `<div style="font-size:28px">🎉 ¡LOTERÍA!</div><p>Tablero #${currentBoard} completado.</p><b>Ahora explica una de tus fracciones para validar tu victoria.</b>`
+    : `<div style="font-size:22px">Todavía no</div><p>Has marcado ${marks.size} de 9 casillas.</p>`;
+};
+
+function setHostStatus(s){$("hostStatus").textContent=s}
+$("createRoom").onclick=()=>{
+  if(peer){peer.destroy();peer=null}
+  const id="L251-"+Math.random().toString(36).slice(2,7).toUpperCase();
+  peer=new Peer(id);
+  peer.on("open",()=>{ $("roomCode").value=id; $("hostCall").classList.remove("hidden"); setHostStatus("Sala creada. Comparte el código con el grupo."); });
+  peer.on("connection",c=>{
+    hostConns.push(c);
+    c.on("open",()=>c.send({type:"state",index:callIndex}));
+    c.on("data",msg=>{ if(msg.type==="hello") setHostStatus("Jugador conectado: "+(msg.name||"sin nombre")); });
+    c.on("close",()=>{hostConns=hostConns.filter(x=>x!==c)});
+  });
+  peer.on("error",e=>setHostStatus("No se pudo crear la sala: "+e.type));
+};
+$("copyRoom").onclick=()=>{ if($("roomCode").value) navigator.clipboard?.writeText($("roomCode").value); };
+
+function broadcast(msg){hostConns.forEach(c=>{try{c.send(msg)}catch(e){}})}
+function showHostCall(){
+  if(callIndex<0){$("callFrac").textContent="—";$("callTitle").textContent="Listos";$("callClue").textContent="Presiona “Siguiente pista” para comenzar.";return}
+  const c=DATA.cards[callIndex];
+  $("callNum").textContent="TARJETA "+String(callIndex+1).padStart(2,"0");
+  $("callFrac").textContent="FRACCIÓN "+c.fraccion;
+  $("callTitle").textContent=c.titulo;
+  $("callClue").textContent=c.pista;
+  $("callAnswer").textContent=c.respuesta;
+  $("callAnswer").classList.add("hidden");
+  $("progress").textContent=(callIndex+1)+"/12";
+}
+$("nextCall").onclick=()=>{
+  if(callIndex>=11){setHostStatus("Ya se cantaron las 12 pistas. Puedes reiniciar.");return}
+  callIndex++;
+  showHostCall();
+  broadcast({type:"call",index:callIndex});
+};
+$("showAnswer").onclick=()=>{
+  if(callIndex>=0) $("callAnswer").classList.toggle("hidden");
+};
+$("resetGame").onclick=()=>{
+  callIndex=-1;showHostCall();broadcast({type:"reset"});
+};
+
+$("playerStatus").innerHTML += "";
+// Join room from the player tab: add small controls dynamically.
+const roomJoin=document.createElement("div");
+roomJoin.className="room";
+roomJoin.style.marginTop="12px";
+roomJoin.innerHTML='<input id="joinCode" placeholder="Código de sala (ej. L251-ABCDE)" maxlength="11"><button class="btn gold" id="joinRoom">🔗 Unirse a sala</button>';
+$("player").querySelector(".center").appendChild(roomJoin);
+$("joinRoom").onclick=()=>{
+  const code=$("joinCode").value.trim().toUpperCase();
+  if(!code){$("playerStatus").textContent="Escribe el código de la sala.";return}
+  if(peer){peer.destroy();peer=null}
+  peer=new Peer();
+  peer.on("open",()=>{
+    conn=peer.connect(code,{reliable:true});
+    conn.on("open",()=>{
+      conn.send({type:"hello",name:$("playerName").value||"Jugador",board:currentBoard});
+      $("playerStatus").textContent="🟢 Conectado a la sala. Espera la siguiente pista.";
+    });
+    conn.on("data",msg=>{
+      if(msg.type==="call"){
+        const c=DATA.cards[msg.index];
+        $("playerStatus").innerHTML=`📣 <b>Fracción ${c.fraccion}: ${c.titulo}</b><br>${c.pista}`;
+        // Optional helper: briefly highlight matching board cell.
+        document.querySelectorAll(".cell").forEach(el=>el.style.outline="");
+        const target=document.querySelector(`.cell[data-id="${c.id}"]`);
+        if(target) target.style.outline="3px solid #b89b62";
+      } else if(msg.type==="reset"){
+        $("playerStatus").textContent="Juego reiniciado por el cantador.";
+        marks=new Set();renderBoard();
+      } else if(msg.type==="state" && msg.index>=0){
+        const c=DATA.cards[msg.index];
+        $("playerStatus").innerHTML=`📣 <b>Fracción ${c.fraccion}: ${c.titulo}</b><br>${c.pista}`;
+      }
+    });
+    conn.on("close",()=>{$("playerStatus").textContent="🔴 Desconectado de la sala."});
+  });
+  peer.on("error",e=>$("playerStatus").textContent="No se pudo conectar. Revisa el código y que ambos tengan internet.");
+};
+
+DATA.cards.forEach(c=>{
+  const d=document.createElement("div");d.className="mini";
+  d.innerHTML=`<b>Fracción ${c.fraccion}</b>${c.titulo}`;
+  $("allCards").appendChild(d);
+});
+</script>
+</body>
+</html>
